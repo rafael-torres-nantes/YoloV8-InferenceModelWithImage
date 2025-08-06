@@ -4,9 +4,11 @@ Model Selector Utility
 
 Utilitário para listagem e seleção interativa de modelos YoloV8.
 Permite ao usuário escolher entre modelos disponíveis nas pastas models/pretrained e models/trained.
+Inclui funcionalidade de download automático de modelos quando necessário.
 """
 
 import os
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
@@ -14,11 +16,25 @@ from typing import Dict, List, Optional, Union
 class ModelSelector:
     """
     Classe responsável por listar e permitir seleção interativa de modelos YoloV8
+    Inclui funcionalidade de download automático quando não há modelos disponíveis
     """
+    
+    # Modelos YoloV8 oficiais disponíveis para download
+    OFFICIAL_MODELS = {
+        'yolov8n.pt': {'size': '6.2MB', 'speed': '🚀🚀🚀🚀🚀', 'accuracy': '⭐⭐⭐', 'desc': 'Nano - Ultra rápido'},
+        'yolov8s.pt': {'size': '21.5MB', 'speed': '🚀🚀🚀🚀', 'accuracy': '⭐⭐⭐⭐', 'desc': 'Small - Balanceado'},
+        'yolov8m.pt': {'size': '49.7MB', 'speed': '🚀🚀🚀', 'accuracy': '⭐⭐⭐⭐⭐', 'desc': 'Medium - Boa precisão'},
+        'yolov8l.pt': {'size': '83.7MB', 'speed': '🚀🚀', 'accuracy': '⭐⭐⭐⭐⭐⭐', 'desc': 'Large - Alta precisão'},
+        'yolov8x.pt': {'size': '136.7MB', 'speed': '🚀', 'accuracy': '⭐⭐⭐⭐⭐⭐⭐', 'desc': 'Extra Large - Máxima precisão'}
+    }
     
     def __init__(self):
         self.pretrained_dir = Path('models/pretrained')
         self.trained_dir = Path('models/trained')
+        
+        # Garantir que os diretórios existem
+        self.pretrained_dir.mkdir(parents=True, exist_ok=True)
+        self.trained_dir.mkdir(parents=True, exist_ok=True)
     
     def list_available_models(self) -> Dict[str, List[Dict]]:
         """
@@ -138,6 +154,7 @@ class ModelSelector:
     def select_model_interactive(self) -> Optional[str]:
         """
         Interface interativa para seleção de modelo
+        Inclui opção de download automático quando não há modelos disponíveis
         
         Returns:
             Caminho do modelo selecionado ou None se cancelado
@@ -149,40 +166,52 @@ class ModelSelector:
         models = self.list_available_models()
         all_models = self.display_models_menu(models)
         
+        # Se não há modelos, oferece download
         if not all_models:
-            print("\n❌ Nenhum modelo encontrado nas pastas models/!")
-            print("   Certifique-se de ter modelos .pt em:")
-            print("   - models/pretrained/")
-            print("   - models/trained/")
-            print("\n💡 Dica: Você pode adicionar modelos YoloV8 (.pt) nessas pastas")
-            return None
+            return self.handle_no_models_scenario()
+        
+        # Adicionar opção de download mesmo quando há modelos
+        print(f"\n   � {len(all_models) + 1}. Baixar novo modelo oficial")
         
         # Seleção do usuário
         while True:
             try:
-                print(f"\n🔧 Digite o número do modelo (1-{len(all_models)}) ou Enter para usar o primeiro:")
+                print(f"\n🔧 Digite o número do modelo (1-{len(all_models) + 1}) ou Enter para usar o primeiro:")
                 choice = input(">>> ").strip()
                 
                 if choice == "":
                     selected_model = all_models[0]
                     print(f"✅ Usando modelo padrão: {selected_model['name']}")
-                    break
+                    return selected_model['path']
                 
                 choice_num = int(choice)
-                if 1 <= choice_num <= len(all_models):
+                
+                # Opção de download
+                if choice_num == len(all_models) + 1:
+                    selected_model_name = self.display_download_menu()
+                    if selected_model_name:
+                        if self.download_model(selected_model_name):
+                            model_path = self.pretrained_dir / selected_model_name
+                            return str(model_path)
+                        else:
+                            print("❌ Falha no download. Tente novamente.")
+                            continue
+                    else:
+                        continue
+                
+                # Seleção de modelo existente
+                elif 1 <= choice_num <= len(all_models):
                     selected_model = all_models[choice_num - 1]
                     print(f"✅ Modelo selecionado: {selected_model['name']}")
-                    break
+                    return selected_model['path']
                 else:
-                    print(f"❌ Número inválido! Digite um valor entre 1 e {len(all_models)}")
+                    print(f"❌ Número inválido! Digite um valor entre 1 e {len(all_models) + 1}")
             
             except ValueError:
                 print("❌ Por favor, digite apenas números!")
             except KeyboardInterrupt:
                 print("\n\n❌ Cancelado pelo usuário")
                 return None
-        
-        return selected_model['path']
     
     def get_default_model(self) -> Optional[str]:
         """
@@ -249,6 +278,179 @@ class ModelSelector:
                     matches.append(str(model_file))
         
         return sorted(matches)
+
+    def download_model(self, model_name: str) -> bool:
+        """
+        Baixa um modelo YoloV8 oficial usando ultralytics
+        
+        Args:
+            model_name: Nome do modelo (ex: 'yolov8n.pt')
+            
+        Returns:
+            True se o download foi bem-sucedido
+        """
+        try:
+            print(f"\n📥 Baixando modelo {model_name}...")
+            print("   Isso pode levar alguns minutos dependendo da sua conexão...")
+            
+            # Importar YOLO aqui para evitar dependência circular
+            try:
+                from ultralytics import YOLO
+            except ImportError:
+                print("❌ Erro: ultralytics não instalado!")
+                print("   Execute: pip install ultralytics")
+                return False
+            
+            # Baixar o modelo (YOLO automaticamente baixa se não existir)
+            model = YOLO(model_name)
+            
+            # Verificar se o modelo foi baixado no diretório correto
+            downloaded_path = Path(model_name)
+            target_path = self.pretrained_dir / model_name
+            
+            # Mover para o diretório correto se necessário
+            if downloaded_path.exists() and downloaded_path != target_path:
+                downloaded_path.rename(target_path)
+                print(f"✅ Modelo movido para: {target_path}")
+            elif target_path.exists():
+                print(f"✅ Modelo baixado com sucesso: {target_path}")
+            else:
+                print("❌ Erro: Não foi possível localizar o modelo baixado")
+                return False
+                
+            return True
+            
+        except Exception as e:
+            print(f"❌ Erro ao baixar modelo {model_name}: {e}")
+            return False
+
+    def display_download_menu(self) -> Optional[str]:
+        """
+        Exibe menu de download de modelos oficiais
+        
+        Returns:
+            Nome do modelo escolhido para download ou None se cancelado
+        """
+        print("\n" + "="*70)
+        print("📥 DOWNLOAD DE MODELOS YOLOV8 OFICIAIS")
+        print("="*70)
+        print("\n🤖 Modelos disponíveis para download:")
+        
+        models_list = list(self.OFFICIAL_MODELS.keys())
+        
+        for i, model_name in enumerate(models_list, 1):
+            info = self.OFFICIAL_MODELS[model_name]
+            print(f"   {i}. {model_name}")
+            print(f"      📊 {info['desc']}")
+            print(f"      💾 Tamanho: {info['size']}")
+            print(f"      ⚡ Velocidade: {info['speed']}")
+            print(f"      🎯 Precisão: {info['accuracy']}")
+            print()
+        
+        print("   0. ❌ Cancelar")
+        
+        while True:
+            try:
+                choice = input(f"\n🔧 Digite o número do modelo (1-{len(models_list)}) ou 0 para cancelar: ").strip()
+                
+                if choice == "0":
+                    print("❌ Download cancelado")
+                    return None
+                
+                choice_num = int(choice)
+                if 1 <= choice_num <= len(models_list):
+                    selected_model = models_list[choice_num - 1]
+                    print(f"✅ Selecionado para download: {selected_model}")
+                    return selected_model
+                else:
+                    print(f"❌ Número inválido! Digite um valor entre 1 e {len(models_list)}")
+            
+            except ValueError:
+                print("❌ Por favor, digite apenas números!")
+            except KeyboardInterrupt:
+                print("\n\n❌ Cancelado pelo usuário")
+                return None
+
+    def handle_no_models_scenario(self) -> Optional[str]:
+        """
+        Lida com o cenário onde não há modelos disponíveis
+        Oferece opção de download automático
+        
+        Returns:
+            Caminho do modelo baixado ou None se cancelado
+        """
+        print("\n❌ NENHUM MODELO ENCONTRADO!")
+        print("="*50)
+        print("   Não foram encontrados modelos YoloV8 nas pastas:")
+        print("   📁 models/pretrained/")
+        print("   📁 models/trained/")
+        
+        print("\n💡 OPÇÕES DISPONÍVEIS:")
+        print("   1. 📥 Baixar modelo oficial YoloV8")
+        print("   2. 📋 Ver instruções para adicionar modelos manualmente")
+        print("   3. ❌ Cancelar")
+        
+        while True:
+            try:
+                choice = input("\n🔧 Digite sua escolha (1-3): ").strip()
+                
+                if choice == "1":
+                    # Opção de download
+                    selected_model = self.display_download_menu()
+                    if selected_model:
+                        if self.download_model(selected_model):
+                            model_path = self.pretrained_dir / selected_model
+                            return str(model_path)
+                        else:
+                            print("❌ Falha no download. Tente novamente.")
+                            continue
+                    else:
+                        continue
+                
+                elif choice == "2":
+                    # Instruções manuais
+                    self.show_manual_instructions()
+                    return None
+                
+                elif choice == "3":
+                    print("❌ Operação cancelada")
+                    return None
+                
+                else:
+                    print("❌ Opção inválida! Digite 1, 2 ou 3")
+            
+            except ValueError:
+                print("❌ Por favor, digite apenas números!")
+            except KeyboardInterrupt:
+                print("\n\n❌ Cancelado pelo usuário")
+                return None
+
+    def show_manual_instructions(self):
+        """
+        Mostra instruções para adicionar modelos manualmente
+        """
+        print("\n" + "="*60)
+        print("📋 COMO ADICIONAR MODELOS MANUALMENTE")
+        print("="*60)
+        
+        print("\n🤖 MODELOS PRÉ-TREINADOS:")
+        print("   📁 Pasta: models/pretrained/")
+        print("   🌐 Download manual: https://github.com/ultralytics/ultralytics")
+        print("   📝 Formatos aceitos: .pt (PyTorch)")
+        
+        print("\n🎯 MODELOS CUSTOMIZADOS:")
+        print("   📁 Pasta: models/trained/")
+        print("   📝 Coloque seus modelos treinados aqui")
+        print("   📝 Formatos aceitos: .pt (PyTorch)")
+        
+        print("\n📥 DOWNLOAD DIRETO:")
+        for model_name, info in self.OFFICIAL_MODELS.items():
+            print(f"   • {model_name} - {info['desc']} ({info['size']})")
+        
+        print("\n💡 DICAS:")
+        print("   1. Certifique-se de que os arquivos têm extensão .pt")
+        print("   2. Execute este script novamente após adicionar modelos")
+        print("   3. Os modelos são carregados automaticamente na próxima execução")
 
 
 # Função de conveniência para uso direto
