@@ -1,22 +1,24 @@
+#!/usr/bin/env python3
 """
-Exemplo de Uso das Funções Individuais
-======================================
+Detecção de Objetos - Ultra Simples
+==================================
 
-Demonstra como usar as funções individuais do sistema refatorado.
+O script mais simples possível para detectar objetos com YoloV8.
+Apenas 3 passos: Selecionar modelo → Processar imagens → Ver resultados
 """
 
-from services.examples_orchestrator import YoloV8ExamplesOrchestrator
 from utils.model_selector import ModelSelector
+from controller.inference_controller import InferenceController
 
 
 def lambda_handler(event, context):
-    """Testa as funções individuais com seleção de modelo"""
+    """Detecção de objetos ultra simples"""
     
-    print("🧪 TESTE DAS FUNÇÕES INDIVIDUAIS")
-    print("="*50)
+    print("🔍 DETECÇÃO DE OBJETOS")
+    print("="*30)
     
-    # Seleção interativa de modelo
-    print("\n🤖 Selecionando modelo para os testes:")
+    # Passo 1: Escolher modelo
+    print("\n📦 Escolha um modelo:")
     model_selector = ModelSelector()
     selected_model = model_selector.select_model_interactive()
     
@@ -27,56 +29,33 @@ def lambda_handler(event, context):
     print(f"\n🎯 Usando modelo: {selected_model}")
     print("="*50)
     
-    # Teste 1: Apenas inferência
-    print("\n1️⃣ Testando inferência individual:")
+    # Passo 2: Detectar objetos
+    print("\n🚀 Detectando objetos...")
     try:
-        orchestrator = YoloV8ExamplesOrchestrator()
-        result = orchestrator.run_single_inference(
-            model_path=selected_model,
-            confidence=0.5
-        )
-        print(f"   Status: {result.get('statusCode', 'N/A')}")
-        if result.get('statusCode') == 200:
-            body = result.get('body', {})
-            print(f"   Processadas: {body.get('processed_images', 0)} imagens")
-            print(f"   Detecções: {body.get('total_detections', 0)}")
+        controller = InferenceController(selected_model)
+        results = controller.run_folder_inference("img/inference_data", conf=0.5)
+        
+        # Passo 3: Mostrar resultados
+        summary = results.get('summary', {})
+        total_images = summary.get('total_images_processed', 0)
+        total_detections = summary.get('total_detections', 0)
+        classes = summary.get('classes_detected', {})
+        
+        print(f"\n✅ RESULTADO:")
+        print(f"   📷 {total_images} imagens")  
+        print(f"   🎯 {total_detections} objetos")
+        
+        if classes:
+            print(f"   🏷️  Encontrados:")
+            for obj_type, count in classes.items():
+                print(f"      • {count}x {obj_type}")
+        
+        print(f"   📁 Salvos em: output/")
+        
     except Exception as e:
-        print(f"   Erro: {e}")
-    
-    # Teste 2: Apenas benchmark
-    print("\n2️⃣ Testando benchmark individual:")
-    try:
-        result = orchestrator.run_single_benchmark()
-        print(f"   Status: {result.get('statusCode', 'N/A')}")
-        if result.get('statusCode') == 200:
-            body = result.get('body', {})
-            benchmark_results = body.get('benchmark_results', {})
-            models_count = len(benchmark_results.get('model_results', {}))
-            print(f"   Modelos testados: {models_count}")
-    except Exception as e:
-        print(f"   Erro: {e}")
-    
-    # Teste 3: Apenas processamento em lote
-    print("\n3️⃣ Testando processamento em lote:")
-    try:
-        result = orchestrator.run_single_batch(
-            model_path=selected_model,
-            confidence=0.4
-        )
-        print(f"   Status: {result.get('statusCode', 'N/A')}")
-        if result.get('statusCode') == 200:
-            body = result.get('body', {})
-            batch_results = body.get('batch_results', {})
-            summary = batch_results.get('summary', {})
-            images = summary.get('total_images_processed', 0)
-            detections = summary.get('total_detections', 0)
-            print(f"   Processadas: {images} imagens")
-            print(f"   Detecções: {detections}")
-    except Exception as e:
-        print(f"   Erro: {e}")
-    
+        print(f"❌ Erro: {e}")
+
     print("\n✅ Todos os testes individuais concluídos!")
 
-
 if __name__ == "__main__":
-    lambda_handler(event=None, context=None)
+    lambda_handler(event={}, context={})
