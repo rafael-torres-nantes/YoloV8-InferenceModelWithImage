@@ -9,7 +9,7 @@ from services.examples_orchestrator import YoloV8ExamplesOrchestrator
 from utils.model_selector import ModelSelector
 
 
-def test_individual_functions():
+def lambda_handler(event, context):
     """Testa as funções individuais com seleção de modelo"""
     
     print("🧪 TESTE DAS FUNÇÕES INDIVIDUAIS")
@@ -78,28 +78,5 @@ def test_individual_functions():
     print("\n✅ Todos os testes individuais concluídos!")
 
 
-def show_modular_structure():
-    """Mostra a nova estrutura modular"""
-    
-    print("\n📁 NOVA ESTRUTURA MODULAR")
-    print("="*50)
-    print("advanced_example.py          ← Ponto de entrada limpo")
-    print("├─ services/")
-    print("│  ├─ yolo_handlers.py       ← Handlers principais")
-    print("│  └─ examples_orchestrator.py ← Orquestração")
-    print("├─ config/")
-    print("│  └─ app_config.py          ← Configuração centralizada")
-    print("└─ utils/")
-    print("   └─ model_selector.py      ← Seleção de modelos")
-    
-    print("\n🎯 VANTAGENS:")
-    print("✅ Código limpo e organizados")
-    print("✅ Responsabilidades separadas")
-    print("✅ Fácil manutenção")
-    print("✅ Funções reutilizáveis")
-    print("✅ Configuração centralizada")
-
-
 if __name__ == "__main__":
-    show_modular_structure()
-    test_individual_functions()
+    lambda_handler(event=None, context=None)
