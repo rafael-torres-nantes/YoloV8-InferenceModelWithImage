@@ -28,7 +28,8 @@ O objetivo principal é fornecer uma solução **pronta para produção** que fa
 ### 🎯 Principais Características
 
 - **Seleção Automática de Modelos**: Interface interativa para escolher entre modelos locais e pré-treinados
-- **Download Automático**: Baixa e organiza modelos YoloV8 automaticamente
+- **Download Automático**: Baixa e organiza modelos YoloV8 automaticamente quando não há modelos disponíveis
+- **Seleção Inteligente de Modelos**: Sistema que detecta automaticamente ausência de modelos e oferece download
 - **Benchmark Comparativo**: Testa múltiplos modelos e compara performance
 - **Análise de Thresholds**: Testa diferentes níveis de confiança
 - **Relatórios Detalhados**: Gera arquivos JSON com análises completas
@@ -63,24 +64,36 @@ O sistema suporta todos os modelos YoloV8 oficiais da Ultralytics:
 
 ### 🔍 Funcionalidades Avançadas
 
-#### 1. **Demonstração Básica**
+#### 1. **Seleção Inteligente de Modelos**
+- **Detecção Automática**: Sistema detecta se há modelos disponíveis nas pastas
+- **Download Interativo**: Quando não há modelos, oferece menu de download automático
+- **Interface Unificada**: Menu único para modelos locais e download de novos modelos
+- **Validação de Modelos**: Verifica integridade e compatibilidade dos arquivos
+
+#### 2. **Sistema de Download Automático**
+- **Modelos Oficiais**: Download direto dos modelos YoloV8 oficiais (n, s, m, l, x)
+- **Organização Automática**: Modelos baixados são organizados na pasta `models/pretrained/`
+- **Informações Detalhadas**: Cada modelo mostra tamanho, velocidade e precisão
+- **Validação Pós-Download**: Verifica se o download foi bem-sucedido
+
+#### 3. **Demonstração Básica**
 - Processamento completo de pasta de imagens
 - Seleção interativa de modelos
 - Detecção com threshold configurável
 - Estatísticas detalhadas de detecção
 
-#### 2. **Benchmark de Modelos**
+#### 4. **Benchmark de Modelos**
 - Comparação automática entre múltiplos modelos
 - Métricas de velocidade e precisão
 - Ranking de performance
 - Análise de tamanho vs. velocidade
 
-#### 3. **Análise de Thresholds**
+#### 5. **Análise de Thresholds**
 - Testa diferentes níveis de confiança (0.1 a 0.9)
 - Analisa impacto na quantidade de detecções
 - Otimização de parâmetros para casos específicos
 
-#### 4. **Processamento Avançado**
+#### 6. **Processamento Avançado**
 - Seleção automática do melhor modelo disponível
 - Análise completa com métricas detalhadas
 - Relatórios em JSON para integração
@@ -367,8 +380,26 @@ cp suas_imagens/* img/inference_data/
 
 ### 5. **Execute o sistema**
 ```bash
-# Execução principal - Interface interativa
-python advanced_example.py
+# Execução principal - Interface interativa com download automático
+python lambda_function.py
+
+# Ou teste apenas a funcionalidade de download
+python test_download.py
+```
+
+### 6. **🧪 Teste da Funcionalidade de Download**
+```bash
+# Teste completo da funcionalidade (simula pasta vazia)
+python test_download.py
+# Escolha opção 1 para testar cenário sem modelos
+
+# Teste apenas o menu de download
+python test_download.py  
+# Escolha opção 2 para testar menu de download
+
+# Ver instruções manuais
+python test_download.py
+# Escolha opção 3 para ver como adicionar modelos manualmente
 ```
 
 ### 6. **Uso Programático** (Opcional)
@@ -449,7 +480,100 @@ toothbrush
 
 ## 🧪 Exemplos de Uso
 
-### 📱 **Interface Interativa com Seleção de Modelo**
+### � **Cenário 1: Primeira Execução (Sem Modelos)**
+
+Quando você executa o sistema pela primeira vez e não há modelos disponíveis:
+
+```
+🤖 SELEÇÃO DE MODELO YOLOV8
+============================================================
+
+❌ NENHUM MODELO ENCONTRADO!
+==================================================
+   Não foram encontrados modelos YoloV8 nas pastas:
+   📁 models/pretrained/
+   📁 models/trained/
+
+💡 OPÇÕES DISPONÍVEIS:
+   1. 📥 Baixar modelo oficial YoloV8
+   2. 📋 Ver instruções para adicionar modelos manualmente
+   3. ❌ Cancelar
+
+🔧 Digite sua escolha (1-3): 1
+
+======================================================================
+📥 DOWNLOAD DE MODELOS YOLOV8 OFICIAIS
+======================================================================
+
+🤖 Modelos disponíveis para download:
+   1. yolov8n.pt
+      📊 Nano - Ultra rápido
+      💾 Tamanho: 6.2MB
+      ⚡ Velocidade: 🚀🚀🚀🚀🚀
+      🎯 Precisão: ⭐⭐⭐
+
+   2. yolov8s.pt
+      📊 Small - Balanceado  
+      💾 Tamanho: 21.5MB
+      ⚡ Velocidade: 🚀🚀🚀🚀
+      🎯 Precisão: ⭐⭐⭐⭐
+
+   3. yolov8m.pt
+      📊 Medium - Boa precisão
+      💾 Tamanho: 49.7MB
+      ⚡ Velocidade: 🚀🚀🚀
+      🎯 Precisão: ⭐⭐⭐⭐⭐
+
+   4. yolov8l.pt
+      📊 Large - Alta precisão
+      💾 Tamanho: 83.7MB
+      ⚡ Velocidade: 🚀🚀
+      🎯 Precisão: ⭐⭐⭐⭐⭐⭐
+
+   5. yolov8x.pt
+      📊 Extra Large - Máxima precisão
+      💾 Tamanho: 136.7MB
+      ⚡ Velocidade: 🚀
+      🎯 Precisão: ⭐⭐⭐⭐⭐⭐⭐
+
+   0. ❌ Cancelar
+
+🔧 Digite o número do modelo (1-5) ou 0 para cancelar: 2
+✅ Selecionado para download: yolov8s.pt
+
+📥 Baixando modelo yolov8s.pt...
+   Isso pode levar alguns minutos dependendo da sua conexão...
+Downloading https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8s.pt...
+100%|███████████████████████████████| 21.5M/21.5M [00:00<00:00, 39.5MB/s]
+
+✅ Modelo baixado com sucesso: models\pretrained\yolov8s.pt
+```
+
+### 🤖 **Cenário 2: Seleção Normal com Opção de Download**
+
+Quando já existem modelos, mas você quer baixar um modelo adicional:
+
+```
+🤖 SELEÇÃO DE MODELO YOLOV8
+============================================================
+
+📦 MODELOS DISPONÍVEIS:
+
+   🚀 Pré-treinados (models/pretrained/):
+      1. yolov8n.pt (6.2MB)
+      2. yolov8s.pt (21.5MB)
+
+   🎯 Customizados (models/trained/):
+      3. meu_modelo_custom.pt (45.2MB)
+
+   📥 4. Baixar novo modelo oficial
+
+🔧 Digite o número do modelo (1-4) ou Enter para usar o primeiro: 4
+
+[Menu de download é exibido...]
+```
+
+### �📱 **Interface Interativa com Seleção de Modelo**
 ```
 🚀 YOLOV8 INFERENCE SYSTEM - SELEÇÃO INTERATIVA
 ============================================================
