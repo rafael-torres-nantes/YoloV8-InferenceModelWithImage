@@ -127,45 +127,6 @@ class InferenceController:
         
         return benchmark_results
     
-    def analyze_image_with_different_thresholds(self, image_path: str, 
-                                               thresholds: List[float] = None) -> Dict[str, Any]:
-        """
-        Analisa uma imagem com diferentes thresholds.
-        
-        Args:
-            image_path: Caminho da imagem
-            thresholds: Lista de thresholds para testar
-            
-        Returns:
-            Resultados da análise
-        """
-        if thresholds is None:
-            thresholds = [0.1, 0.3, 0.5, 0.7, 0.9]
-        
-        print(f"📷 Analisando: {Path(image_path).name}")
-        print(f"🎯 Testando diferentes thresholds de confiança:")
-        
-        threshold_results = {}
-        
-        for threshold in thresholds:
-            result = self.inference_service.run_inference_on_image(image_path, conf=threshold)
-            detections = result.get('detections', [])
-            
-            threshold_results[threshold] = {
-                'detections_count': len(detections),
-                'detections': detections
-            }
-            
-            print(f"   Conf {threshold:.1f}: {len(detections)} detecções")
-            
-            # Mostra as 3 melhores detecções
-            if detections:
-                top_detections = sorted(detections, key=lambda x: x['confidence'], reverse=True)[:3]
-                for det in top_detections:
-                    print(f"      - {det['class_name']}: {det['confidence']:.3f}")
-        
-        return threshold_results
-    
     def _save_detailed_report(self, results: List[Dict[str, Any]], 
                             summary: Dict[str, Any], 
                             performance: Dict[str, Any]):
